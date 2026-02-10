@@ -69,4 +69,30 @@ public class ProductionPlanningServiceTest {
 
         assertEquals(new BigDecimal("1000.00"), plan.getGrandTotalValue());
     }
+
+    @Test
+    void shouldProduceNothingWhenStockIsInsufficient() {
+        RawMaterial resin = new RawMaterial();
+        resin.setId(1L);
+        resin.setName("Polypropylene Resin");
+        resin.setStockQuantity(5);
+
+        Product dashboard = new Product();
+        dashboard.setId(1L);
+        dashboard.setPrice(new BigDecimal("100.00"));
+
+        ProductComposition comp = new ProductComposition();
+        comp.setRawMaterial(resin);
+        comp.setQuantityNeeded(10);
+        dashboard.setComposition(List.of(comp));
+
+        // Mocks
+        when(rawMaterialRepository.findAll()).thenReturn(new ArrayList<>(List.of(resin)));
+        when(productRepository.findAll()).thenReturn(new ArrayList<>(List.of(dashboard)));
+
+        ProductionPlanDTO plan = service.calculateProductionPlan();
+
+        assertEquals(0, plan.getProductionList().size(), "Should produce nothing");
+        assertEquals(BigDecimal.ZERO, plan.getGrandTotalValue());
+    }
 }
