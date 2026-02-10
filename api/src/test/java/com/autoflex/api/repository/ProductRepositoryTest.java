@@ -1,10 +1,8 @@
-package com.autoflex.api;
+package com.autoflex.api.repository;
 
 import com.autoflex.api.model.Product;
 import com.autoflex.api.model.ProductComposition;
 import com.autoflex.api.model.RawMaterial;
-import com.autoflex.api.repository.ProductRepository;
-import com.autoflex.api.repository.RawMaterialRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
