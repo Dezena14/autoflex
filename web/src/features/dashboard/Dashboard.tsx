@@ -1,8 +1,45 @@
-import { Package, TrendingUp, AlertTriangle } from "lucide-react";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import {
+    Package,
+    TrendingUp,
+    AlertTriangle,
+    ArrowRight,
+    RefreshCw,
+} from "lucide-react";
 import { Card } from "../../components/Card";
 import { Button } from "../../components/Button";
+import { fetchProductionPlan } from "../production/productionSlice";
+import { type RootState, type AppDispatch } from "../../store/store";
 
 export const Dashboard = () => {
+    const dispatch = useDispatch<AppDispatch>();
+
+    const { plan, status } = useSelector(
+        (state: RootState) => state.production,
+    );
+    const loading = status === "loading";
+
+    useEffect(() => {
+        if (status === "idle") {
+            dispatch(fetchProductionPlan());
+        }
+    }, [status, dispatch]);
+
+    const handleRefresh = () => {
+        dispatch(fetchProductionPlan());
+    };
+
+    const formatCurrency = (value: number) => {
+        return new Intl.NumberFormat("en-US", {
+            style: "currency",
+            currency: "USD",
+        }).format(value);
+    };
+
+    const totalQuantity =
+        plan?.productionList.reduce((acc, item) => acc + item.quantity, 0) || 0;
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
@@ -11,11 +48,21 @@ export const Dashboard = () => {
                         Dashboard
                     </h1>
                     <p className="text-text-muted">
-                        Overview of your production metrics
+                        Production overview based on current inventory
                     </p>
                 </div>
                 <div className="flex gap-3">
-                    <Button>New Production</Button>
+                    <Button
+                        onClick={handleRefresh}
+                        disabled={loading}
+                        className="flex items-center gap-2"
+                    >
+                        <RefreshCw
+                            size={16}
+                            className={loading ? "animate-spin" : ""}
+                        />
+                        <span>{loading ? "Updating..." : "Refresh Data"}</span>
+                    </Button>
                 </div>
             </div>
 
@@ -27,10 +74,10 @@ export const Dashboard = () => {
                         </div>
                         <div>
                             <p className="text-sm text-text-muted font-medium">
-                                Total Products
+                                Items to Produce
                             </p>
                             <h3 className="text-2xl font-bold text-text-main">
-                                ---
+                                {loading && !plan ? "..." : totalQuantity}
                             </h3>
                         </div>
                     </div>
@@ -43,10 +90,14 @@ export const Dashboard = () => {
                         </div>
                         <div>
                             <p className="text-sm text-text-muted font-medium">
-                                Production Value
+                                Estimated Value
                             </p>
                             <h3 className="text-2xl font-bold text-text-main">
-                                R$ 0,00
+                                {loading && !plan
+                                    ? "..."
+                                    : formatCurrency(
+                                          plan?.grandTotalValue || 0,
+                                      )}
                             </h3>
                         </div>
                     </div>
@@ -59,7 +110,7 @@ export const Dashboard = () => {
                         </div>
                         <div>
                             <p className="text-sm text-text-muted font-medium">
-                                Low Stock Items
+                                Stock
                             </p>
                             <h3 className="text-2xl font-bold text-text-main">
                                 ---
@@ -69,12 +120,54 @@ export const Dashboard = () => {
                 </Card>
             </div>
 
-            <div className="mt-8 p-8 border-2 border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center text-text-muted bg-slate-50">
-                <Package className="mb-2 opacity-50" size={48} />
-                <p>No recent productions found</p>
-                <span className="text-sm">
-                    Start a new production plan to see data here.
-                </span>
+            <h2 className="text-lg font-bold text-text-main mt-8">
+                Suggested Production Plan
+            </h2>
+
+            <div className="grid gap-4">
+                {plan?.productionList.map((item, index) => (
+                    <div
+                        key={index}
+                        className="bg-white p-4 rounded-xl border border-border flex justify-between items-center shadow-sm hover:shadow-md transition-shadow"
+                    >
+                        <div className="flex items-center gap-4">
+                            <div className="h-10 w-10 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center font-bold">
+                                {item.quantity}
+                            </div>
+                            <div>
+                                <h4 className="font-bold text-text-main">
+                                    {item.productName}
+                                </h4>
+                                <p className="text-sm text-text-muted">
+                                    Priority #{index + 1} (Highest Profit)
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-6">
+                            <div className="text-right">
+                                <span className="block text-xs text-text-muted uppercase font-semibold">
+                                    Total Value
+                                </span>
+                                <span className="font-bold text-green-600">
+                                    {formatCurrency(item.totalValue)}
+                                </span>
+                            </div>
+                            <ArrowRight className="text-slate-300" />
+                        </div>
+                    </div>
+                ))}
+
+                {!loading && (!plan || plan.productionList.length === 0) && (
+                    <div className="p-12 text-center flex flex-col items-center justify-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                        <Package className="h-12 w-12 text-slate-300 mb-3" />
+                        <p className="text-text-muted font-medium">
+                            No production possible with current stock.
+                        </p>
+                        <span className="text-sm text-slate-400">
+                            Add more raw materials in the Inventory tab.
+                        </span>
+                    </div>
+                )}
             </div>
         </div>
     );
