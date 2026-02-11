@@ -48,7 +48,7 @@ public class ProductionPlanningService {
                 deductMaterials(product, maxProducible, inventorySimulation);
 
                 BigDecimal totalValue = product.getPrice().multiply(BigDecimal.valueOf(maxProducible));
-                plan.AddItem(new ProductionItemDTO(product.getName(), maxProducible, totalValue));
+                plan.addItem(new ProductionItemDTO(product.getName(), maxProducible, totalValue));
             }
         }
         return plan;

@@ -16,7 +16,7 @@ public class ProductionPlanDTO {
     private List<ProductionItemDTO> productionList = new ArrayList<>();
     private BigDecimal grandTotalValue = BigDecimal.ZERO;
 
-    public void AddItem (ProductionItemDTO item) {
+    public void addItem (ProductionItemDTO item) {
         this.productionList.add(item);
         this.grandTotalValue = this.grandTotalValue.add(item.getTotalValue());
     }
