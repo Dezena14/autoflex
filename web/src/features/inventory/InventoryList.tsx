@@ -1,17 +1,33 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Package, Plus, Search, RefreshCw, AlertCircle } from "lucide-react";
+import { Package, Plus, Search, RefreshCw, Trash2, Edit } from "lucide-react";
 import { Button } from "../../components/Button";
-import { fetchMaterials } from "./materialsSlice";
+import { Modal } from "../../components/Modal";
+import {
+    fetchMaterials,
+    updateMaterialStock,
+    createMaterial,
+    deleteMaterial,
+} from "./materialsSlice";
 import { type RootState, type AppDispatch } from "../../store/store";
+import { type RawMaterial } from "../../services/api";
 
 export const InventoryList = () => {
     const dispatch = useDispatch<AppDispatch>();
     const { items, status } = useSelector(
         (state: RootState) => state.materials,
     );
-
     const loading = status === "loading";
+    const [searchTerm, setSearchTerm] = useState("");
+    const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const [isEditOpen, setIsEditOpen] = useState(false);
+    const [selectedMaterial, setSelectedMaterial] = useState<{
+        id: number;
+        name: string;
+        stockQuantity: number;
+    } | null>(null);
+    const [newMaterialName, setNewMaterialName] = useState("");
+    const [newMaterialStock, setNewMaterialStock] = useState("");
 
     useEffect(() => {
         if (status === "idle") {
@@ -21,6 +37,53 @@ export const InventoryList = () => {
 
     const handleRefresh = () => {
         dispatch(fetchMaterials());
+    };
+
+    const filteredItems = items.filter((item) =>
+        item.name.toLowerCase().includes(searchTerm.toLowerCase()),
+    );
+
+    const handleDelete = async (id: number) => {
+        if (window.confirm("Are you sure you want to delete this material?")) {
+            await dispatch(deleteMaterial(id));
+        }
+    };
+
+    const handleOpenCreate = () => {
+        setNewMaterialName("");
+        setNewMaterialStock("");
+        setIsCreateOpen(true);
+    };
+
+    const handleCreateSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        await dispatch(
+            createMaterial({
+                name: newMaterialName,
+                stockQuantity: Number(newMaterialStock),
+            }),
+        );
+        setIsCreateOpen(false);
+    };
+
+    const handleOpenEdit = (material: RawMaterial) => {
+        setSelectedMaterial(material);
+        setNewMaterialStock(String(material.stockQuantity));
+        setIsEditOpen(true);
+    };
+
+    const handleEditSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedMaterial) return;
+
+        await dispatch(
+            updateMaterialStock({
+                id: selectedMaterial.id,
+                quantity: Number(newMaterialStock),
+            }),
+        );
+        setIsEditOpen(false);
     };
 
     return (
@@ -45,7 +108,10 @@ export const InventoryList = () => {
                             className={loading ? "animate-spin" : ""}
                         />
                     </Button>
-                    <Button className="flex items-center gap-2">
+                    <Button
+                        className="flex items-center gap-2"
+                        onClick={handleOpenCreate}
+                    >
                         <Plus size={16} />
                         Add Material
                     </Button>
@@ -53,8 +119,8 @@ export const InventoryList = () => {
             </div>
 
             <div className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
-                <div className="p-4 border-b border-border bg-slate-50 flex gap-4">
-                    <div className="relative flex-1 max-w-sm">
+                <div className="p-4 border-b border-border bg-slate-50">
+                    <div className="relative max-w-sm">
                         <Search
                             className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
                             size={18}
@@ -63,6 +129,8 @@ export const InventoryList = () => {
                             type="text"
                             placeholder="Search materials..."
                             className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
                 </div>
@@ -74,61 +142,55 @@ export const InventoryList = () => {
                                 <th className="px-6 py-4">ID</th>
                                 <th className="px-6 py-4">Material Name</th>
                                 <th className="px-6 py-4">Stock Quantity</th>
-                                <th className="px-6 py-4 text-right">Status</th>
+                                <th className="px-6 py-4 text-right">
+                                    Actions
+                                </th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border">
-                            {loading && items.length === 0
-                                ?
-                                  [...Array(3)].map((_, i) => (
-                                      <tr key={i} className="animate-pulse">
-                                          <td className="px-6 py-4">
-                                              <div className="h-4 bg-slate-200 rounded w-8"></div>
-                                          </td>
-                                          <td className="px-6 py-4">
-                                              <div className="h-4 bg-slate-200 rounded w-32"></div>
-                                          </td>
-                                          <td className="px-6 py-4">
-                                              <div className="h-4 bg-slate-200 rounded w-16"></div>
-                                          </td>
-                                          <td className="px-6 py-4"></td>
-                                      </tr>
-                                  ))
-                                : items.map((material) => (
-                                      <tr
-                                          key={material.id}
-                                          className="hover:bg-slate-50 transition-colors"
-                                      >
-                                          <td className="px-6 py-4 text-slate-500">
-                                              #{material.id}
-                                          </td>
-                                          <td className="px-6 py-4 font-medium text-text-main">
-                                              {material.name}
-                                          </td>
-                                          <td className="px-6 py-4">
-                                              <div className="flex items-center gap-2">
-                                                  <span
-                                                      className={`font-bold ${material.stockQuantity < 10 ? "text-red-600" : "text-text-main"}`}
-                                                  >
-                                                      {material.stockQuantity}{" "}
-                                                      kg
-                                                  </span>
-                                              </div>
-                                          </td>
-                                          <td className="px-6 py-4 text-right">
-                                              {material.stockQuantity < 10 ? (
-                                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                                      <AlertCircle size={12} />{" "}
-                                                      Low Stock
-                                                  </span>
-                                              ) : (
-                                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                      In Stock
-                                                  </span>
-                                              )}
-                                          </td>
-                                      </tr>
-                                  ))}
+                            {filteredItems.map((material) => (
+                                <tr
+                                    key={material.id}
+                                    className="hover:bg-slate-50"
+                                >
+                                    <td className="px-6 py-4 text-slate-500">
+                                        #{material.id}
+                                    </td>
+                                    <td className="px-6 py-4 font-medium">
+                                        {material.name}
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <span
+                                            className={`font-bold ${material.stockQuantity < 10 ? "text-red-600" : "text-green-600"}`}
+                                        >
+                                            {material.stockQuantity} kg
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4 text-right">
+                                        <div className="flex justify-end gap-2">
+                                            <Button
+                                                variant="outline"
+                                                onClick={() =>
+                                                    handleOpenEdit(material)
+                                                }
+                                                className="text-xs h-8 px-2 flex items-center gap-1"
+                                                title="Update Stock"
+                                            >
+                                                <Edit size={14} /> Stock
+                                            </Button>
+                                            <button
+                                                onClick={() =>
+                                                    handleDelete(material.id)
+                                                }
+                                                className="text-slate-400 hover:text-red-600 transition-colors p-1"
+                                                title="Delete"
+                                            >
+                                                <Trash2 size={18} />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
                         </tbody>
                     </table>
                 </div>
@@ -140,6 +202,135 @@ export const InventoryList = () => {
                     </div>
                 )}
             </div>
+
+            <Modal
+                isOpen={isCreateOpen}
+                onClose={() => setIsCreateOpen(false)}
+                title="New Raw Material"
+            >
+                <form onSubmit={handleCreateSubmit} className="space-y-4">
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">Name</label>
+                        <input
+                            className="w-full px-3 py-2 border rounded-lg"
+                            value={newMaterialName}
+                            onChange={(e) => setNewMaterialName(e.target.value)}
+                            required
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">
+                            Initial Stock (kg)
+                        </label>
+                        <input
+                            type="number"
+                            className="w-full px-3 py-2 border rounded-lg"
+                            value={newMaterialStock}
+                            onChange={(e) =>
+                                setNewMaterialStock(e.target.value)
+                            }
+                            required
+                        />
+                    </div>
+                    <Button type="submit" className="w-full mt-4">
+                        Create Material
+                    </Button>
+                </form>
+            </Modal>
+
+            <Modal
+                isOpen={isEditOpen}
+                onClose={() => setIsEditOpen(false)}
+                title="Update Stock"
+            >
+                <form onSubmit={handleEditSubmit} className="space-y-4">
+                    <p className="text-sm text-slate-600">
+                        Updating stock for:{" "}
+                        <strong>{selectedMaterial?.name}</strong>
+                    </p>
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">
+                            New Quantity (kg)
+                        </label>
+                        <input
+                            type="number"
+                            className="w-full px-3 py-2 border rounded-lg"
+                            value={newMaterialStock}
+                            onChange={(e) =>
+                                setNewMaterialStock(e.target.value)
+                            }
+                            required
+                        />
+                    </div>
+                    <Button type="submit" className="w-full mt-4">
+                        Save Changes
+                    </Button>
+                </form>
+            </Modal>
+
+            <Modal
+                isOpen={isCreateOpen}
+                onClose={() => setIsCreateOpen(false)}
+                title="New Raw Material"
+            >
+                <form onSubmit={handleCreateSubmit} className="space-y-4">
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">Name</label>
+                        <input
+                            className="w-full px-3 py-2 border rounded-lg"
+                            value={newMaterialName}
+                            onChange={(e) => setNewMaterialName(e.target.value)}
+                            required
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">
+                            Initial Stock (kg)
+                        </label>
+                        <input
+                            type="number"
+                            className="w-full px-3 py-2 border rounded-lg"
+                            value={newMaterialStock}
+                            onChange={(e) =>
+                                setNewMaterialStock(e.target.value)
+                            }
+                            required
+                        />
+                    </div>
+                    <Button type="submit" className="w-full mt-4">
+                        Create Material
+                    </Button>
+                </form>
+            </Modal>
+            <Modal
+                isOpen={isEditOpen}
+                onClose={() => setIsEditOpen(false)}
+                title="Update Stock"
+            >
+                <form onSubmit={handleEditSubmit} className="space-y-4">
+                    <p className="text-sm text-slate-600">
+                        Updating stock for:{" "}
+                        <strong>{selectedMaterial?.name}</strong>
+                    </p>
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">
+                            New Quantity (kg)
+                        </label>
+                        <input
+                            type="number"
+                            className="w-full px-3 py-2 border rounded-lg"
+                            value={newMaterialStock}
+                            onChange={(e) =>
+                                setNewMaterialStock(e.target.value)
+                            }
+                            required
+                        />
+                    </div>
+                    <Button type="submit" className="w-full mt-4">
+                        Save Changes
+                    </Button>
+                </form>
+            </Modal>
         </div>
     );
 };

@@ -1,15 +1,10 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import {
-    Package,
-    TrendingUp,
-    AlertTriangle,
-    ArrowRight,
-    RefreshCw,
-} from "lucide-react";
+import { Package, TrendingUp, AlertTriangle, RefreshCw } from "lucide-react";
 import { Card } from "../../components/Card";
 import { Button } from "../../components/Button";
 import { fetchProductionPlan } from "../production/productionSlice";
+import { fetchMaterials } from "../inventory/materialsSlice";
 import { type RootState, type AppDispatch } from "../../store/store";
 
 export const Dashboard = () => {
@@ -18,16 +13,23 @@ export const Dashboard = () => {
     const { plan, status } = useSelector(
         (state: RootState) => state.production,
     );
+
+    const { items: materials } = useSelector(
+        (state: RootState) => state.materials,
+    );
+
     const loading = status === "loading";
 
     useEffect(() => {
         if (status === "idle") {
             dispatch(fetchProductionPlan());
+            dispatch(fetchMaterials());
         }
     }, [status, dispatch]);
 
     const handleRefresh = () => {
         dispatch(fetchProductionPlan());
+        dispatch(fetchMaterials());
     };
 
     const formatCurrency = (value: number) => {
@@ -36,6 +38,11 @@ export const Dashboard = () => {
             currency: "USD",
         }).format(value);
     };
+
+    const totalStock = materials.reduce(
+        (acc, item) => acc + item.stockQuantity,
+        0,
+    );
 
     const totalQuantity =
         plan?.productionList.reduce((acc, item) => acc + item.quantity, 0) || 0;
@@ -110,10 +117,12 @@ export const Dashboard = () => {
                         </div>
                         <div>
                             <p className="text-sm text-text-muted font-medium">
-                                Stock
+                                Total Stock (kg)
                             </p>
                             <h3 className="text-2xl font-bold text-text-main">
-                                ---
+                                {materials.length > 0
+                                    ? totalStock.toLocaleString()
+                                    : "---"}
                             </h3>
                         </div>
                     </div>
@@ -152,7 +161,6 @@ export const Dashboard = () => {
                                     {formatCurrency(item.totalValue)}
                                 </span>
                             </div>
-                            <ArrowRight className="text-slate-300" />
                         </div>
                     </div>
                 ))}

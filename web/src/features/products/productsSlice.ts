@@ -28,6 +28,14 @@ export const addProduct = createAsyncThunk(
     },
 );
 
+export const deleteProduct = createAsyncThunk(
+    "products/deleteProduct",
+    async (id: number) => {
+        await api.deleteProduct(id);
+        return id;
+    },
+);
+
 const productsSlice = createSlice({
     name: "products",
     initialState,
@@ -49,7 +57,12 @@ const productsSlice = createSlice({
                 (state, action: PayloadAction<Product>) => {
                     state.items.push(action.payload);
                 },
-            );
+            )
+            .addCase(deleteProduct.fulfilled, (state, action) => {
+                state.items = state.items.filter(
+                    (item) => item.id !== action.payload,
+                );
+            });
     },
 });
 

@@ -1,17 +1,23 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Package, Plus, Search, RefreshCw, Layers } from "lucide-react";
-import { Button } from "../../components/Button";
-import { fetchProducts } from "./productsSlice";
-import { type RootState, type AppDispatch } from "../../store/store";
 import { useNavigate } from "react-router-dom";
+import { Package, Plus, Search, RefreshCw, Layers, Trash2 } from "lucide-react";
+import { Button } from "../../components/Button";
+import { Modal } from "../../components/Modal";
+import { fetchProducts, deleteProduct } from "./productsSlice";
+import { type RootState, type AppDispatch } from "../../store/store";
+import { type Product } from "../../services/api";
 
 export const ProductsList = () => {
     const dispatch = useDispatch<AppDispatch>();
     const navigate = useNavigate();
     const { items, status } = useSelector((state: RootState) => state.products);
-
     const loading = status === "loading";
+    const [searchTerm, setSearchTerm] = useState("");
+    const [selectedProduct, setSelectedProduct] = useState<Product | null>(
+        null,
+    );
+    const [isRecipeOpen, setIsRecipeOpen] = useState(false);
 
     useEffect(() => {
         if (status === "idle") {
@@ -21,6 +27,21 @@ export const ProductsList = () => {
 
     const handleRefresh = () => {
         dispatch(fetchProducts());
+    };
+
+    const filteredItems = items.filter((item) =>
+        item.name.toLowerCase().includes(searchTerm.toLowerCase()),
+    );
+
+    const handleDelete = async (id: number) => {
+        if (window.confirm("Delete this product?")) {
+            dispatch(deleteProduct(id));
+        }
+    };
+
+    const handleViewRecipe = (product: Product) => {
+        setSelectedProduct(product);
+        setIsRecipeOpen(true);
     };
 
     const formatCurrency = (value: number) => {
@@ -42,16 +63,16 @@ export const ProductsList = () => {
                     </p>
                 </div>
                 <div className="flex gap-3">
-                    <button
+                    <Button
+                        variant="outline"
                         onClick={handleRefresh}
                         disabled={loading}
-                        className="h-10 px-4 py-2 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 text-slate-700 disabled:opacity-50 transition-colors flex items-center justify-center"
                     >
                         <RefreshCw
                             size={16}
                             className={loading ? "animate-spin" : ""}
                         />
-                    </button>
+                    </Button>
                     <Button
                         className="flex items-center gap-2"
                         onClick={() => navigate("/products/new")}
@@ -73,6 +94,8 @@ export const ProductsList = () => {
                             type="text"
                             placeholder="Search products..."
                             className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
                 </div>
@@ -109,7 +132,7 @@ export const ProductsList = () => {
                                           <td className="px-6 py-4"></td>
                                       </tr>
                                   ))
-                                : items.map((product) => (
+                                : filteredItems.map((product) => (
                                       <tr
                                           key={product.id}
                                           className="hover:bg-slate-50 transition-colors"
@@ -124,13 +147,26 @@ export const ProductsList = () => {
                                               {formatCurrency(product.price)}
                                           </td>
                                           <td className="px-6 py-4">
-                                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                                              <button
+                                                  onClick={() =>
+                                                      handleViewRecipe(product)
+                                                  }
+                                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100 hover:bg-blue-100 transition-colors"
+                                              >
                                                   <Layers size={12} />
                                                   View Recipe
-                                              </span>
+                                              </button>
                                           </td>
-                                          <td className="px-6 py-4 text-right text-slate-400">
-                                              ...
+                                          <td className="px-6 py-4 text-right">
+                                              <button
+                                                  onClick={() =>
+                                                      handleDelete(product.id)
+                                                  }
+                                                  className="text-slate-400 hover:text-red-600 transition-colors p-2"
+                                                  title="Delete Product"
+                                              >
+                                                  <Trash2 size={18} />
+                                              </button>
                                           </td>
                                       </tr>
                                   ))}
@@ -138,13 +174,64 @@ export const ProductsList = () => {
                     </table>
                 </div>
 
-                {!loading && items.length === 0 && (
+                {!loading && filteredItems.length === 0 && (
                     <div className="p-12 text-center text-text-muted">
                         <Package className="mx-auto h-12 w-12 text-slate-300 mb-3" />
                         <p>No products found.</p>
                     </div>
                 )}
             </div>
+
+            <Modal
+                isOpen={isRecipeOpen}
+                onClose={() => setIsRecipeOpen(false)}
+                title={`Recipe: ${selectedProduct?.name}`}
+            >
+                <div className="space-y-4">
+                    {selectedProduct?.composition &&
+                    selectedProduct.composition.length > 0 ? (
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr className="text-left text-slate-500 border-b">
+                                    <th className="pb-2">Raw Material</th>
+                                    <th className="pb-2 text-right">
+                                        Qty Needed
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {selectedProduct.composition.map(
+                                    (comp, idx: number) => (
+                                        <tr
+                                            key={idx}
+                                            className="border-b last:border-0"
+                                        >
+                                            <td className="py-2">
+                                                {comp.rawMaterial?.name ||
+                                                    `Material #${comp.rawMaterial?.id}`}
+                                            </td>
+                                            <td className="py-2 text-right font-medium">
+                                                {comp.quantityNeeded} kg
+                                            </td>
+                                        </tr>
+                                    ),
+                                )}
+                            </tbody>
+                        </table>
+                    ) : (
+                        <p className="text-slate-500 text-center py-4">
+                            No recipe defined for this product.
+                        </p>
+                    )}
+                    <Button
+                        variant="secondary"
+                        onClick={() => setIsRecipeOpen(false)}
+                        className="w-full"
+                    >
+                        Close
+                    </Button>
+                </div>
+            </Modal>
         </div>
     );
 };

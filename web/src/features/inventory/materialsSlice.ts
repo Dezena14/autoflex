@@ -23,6 +23,30 @@ export const fetchMaterials = createAsyncThunk(
     },
 );
 
+export const updateMaterialStock = createAsyncThunk(
+    "materials/updateStock",
+    async ({ id, quantity }: { id: number; quantity: number }) => {
+        const response = await api.updateStock(id, quantity);
+        return response;
+    },
+);
+
+export const createMaterial = createAsyncThunk(
+    "materials/createMaterial",
+    async (data: { name: string; stockQuantity: number }) => {
+        const response = await api.createMaterial(data);
+        return response;
+    },
+);
+
+export const deleteMaterial = createAsyncThunk(
+    "materials/deleteMaterial",
+    async (id: number) => {
+        await api.deleteMaterial(id);
+        return id;
+    },
+);
+
 const materialsSlice = createSlice({
     name: "materials",
     initialState,
@@ -32,15 +56,34 @@ const materialsSlice = createSlice({
             .addCase(fetchMaterials.pending, (state) => {
                 state.status = "loading";
             })
-            .addCase(
-                fetchMaterials.fulfilled,
-                (state, action: PayloadAction<RawMaterial[]>) => {
-                    state.status = "succeeded";
-                    state.items = action.payload;
-                },
-            )
+            .addCase(fetchMaterials.fulfilled, (state, action) => {
+                state.status = "succeeded";
+                state.items = action.payload;
+            })
             .addCase(fetchMaterials.rejected, (state) => {
                 state.status = "failed";
+            })
+            .addCase(
+                updateMaterialStock.fulfilled,
+                (state, action: PayloadAction<RawMaterial>) => {
+                    const index = state.items.findIndex(
+                        (item) => item.id === action.payload.id,
+                    );
+                    if (index !== -1) {
+                        state.items[index] = action.payload;
+                    }
+                },
+            )
+            .addCase(
+                createMaterial.fulfilled,
+                (state, action: PayloadAction<RawMaterial>) => {
+                    state.items.push(action.payload);
+                },
+            )
+            .addCase(deleteMaterial.fulfilled, (state, action) => {
+                state.items = state.items.filter(
+                    (item) => item.id !== action.payload,
+                );
             });
     },
 });
