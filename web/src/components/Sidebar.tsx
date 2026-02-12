@@ -64,19 +64,6 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                             </Link>
                         ))}
                     </nav>
-                    <div className="p-4 border-t border-border">
-                        <div className="bg-slate-50 p-3 rounded-lg">
-                            <p className="text-xs text-slate-500 font-medium">
-                                System Status
-                            </p>
-                            <div className="flex items-center gap-2 mt-1">
-                                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                                <span className="text-xs text-slate-700">
-                                    Online
-                                </span>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </aside>
         </>
