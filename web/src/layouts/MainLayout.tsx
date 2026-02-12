@@ -1,46 +1,35 @@
-import { Outlet, Link } from "react-router-dom";
-import { LayoutDashboard, Package, Layers } from "lucide-react";
+import { useState } from "react";
+import { Outlet } from "react-router-dom";
+import { Menu } from "lucide-react";
+import { Sidebar } from "../components/Sidebar";
 
 export const MainLayout = () => {
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
     return (
-        <div className="min-h-screen bg-bg-body flex">
-            {/* Sidebar */}
-            <aside className="w-64 bg-bg-card border-r border-border fixed h-full">
-                <div className="p-6 border-b border-border">
-                    <h1 className="text-2xl font-bold text-primary">
+        <div className="min-h-screen bg-slate-50 flex">
+            <Sidebar
+                isOpen={isSidebarOpen}
+                onClose={() => setIsSidebarOpen(false)}
+            />
+            <div className="flex-1 flex flex-col min-w-0 overflow-hidden transition-all duration-300">
+                <header className="md:hidden bg-white border-b border-slate-200 h-16 flex items-center justify-between px-4 sticky top-0 z-30">
+                    <span className="font-bold text-lg text-blue-600">
                         Autoflex
-                    </h1>
-                </div>
-
-                <nav className="p-4 space-y-2">
-                    <Link
-                        to="/"
-                        className="flex items-center gap-3 px-4 py-3 text-text-main hover:bg-slate-50 rounded-lg transition-colors"
+                    </span>
+                    <button
+                        onClick={() => setIsSidebarOpen(true)}
+                        className="p-2 text-slate-600 hover:bg-slate-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                     >
-                        <LayoutDashboard size={20} />
-                        <span className="font-medium">Dashboard</span>
-                    </Link>
-                    <Link
-                        to="/products"
-                        className="flex items-center gap-3 px-4 py-3 text-text-main hover:bg-slate-50 rounded-lg transition-colors"
-                    >
-                        <Package size={20} />
-                        <span className="font-medium">Products</span>
-                    </Link>
-                    <Link
-                        to="/materials"
-                        className="flex items-center gap-3 px-4 py-3 text-text-main hover:bg-slate-50 rounded-lg transition-colors"
-                    >
-                        <Layers size={20} />
-                        <span className="font-medium">Inventory</span>
-                    </Link>
-                </nav>
-            </aside>
-
-            {/* Main Content */}
-            <main className="ml-64 flex-1 p-8">
-                <Outlet />
-            </main>
+                        <Menu size={24} />
+                    </button>
+                </header>
+                <main className="flex-1 overflow-y-auto p-4 md:p-8">
+                    <div className="max-w-7xl mx-auto">
+                        <Outlet />
+                    </div>
+                </main>
+            </div>
         </div>
     );
 };

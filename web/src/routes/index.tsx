@@ -15,7 +15,7 @@ export const router = createBrowserRouter([
                 element: <Dashboard />,
             },
             {
-                path: "/materials",
+                path: "/inventory",
                 element: <InventoryList />,
             },
             {

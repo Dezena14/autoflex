@@ -15,6 +15,15 @@ export interface Product {
     id: number;
     name: string;
     price: number;
+    composition?: {
+        id: number;
+        quantityNeeded: number;
+        rawMaterial: {
+            id: number;
+            name: string;
+            stockQuantity: number;
+        };
+    }[];
 }
 
 export interface RawMaterial {
@@ -38,18 +47,20 @@ export const api = {
         return response.json();
     },
 
+    updateStock: async (id: number, quantity: number): Promise<RawMaterial> => {
+        const response = await fetch(`${API_URL}/raw-materials/${id}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ stockQuantity: quantity }),
+        });
+        return response.json();
+    },
+
     getProducts: async (): Promise<Product[]> => {
         const response = await fetch(`${API_URL}/products`);
         return response.json();
-    },
-
-    getMaterials: async (): Promise<RawMaterial[]> => {
-        const response = await fetch(`${API_URL}/raw-materials`);
-        return response.json();
-    },
-
-    updateStock: async (id: number, quantity: number) => {
-        console.log(`Update stock ${id} to ${quantity}`);
     },
 
     createProduct: async (productData: CreateProductDTO): Promise<Product> => {
@@ -61,5 +72,34 @@ export const api = {
             body: JSON.stringify(productData),
         });
         return response.json();
+    },
+
+    deleteProduct: async (id: number): Promise<void> => {
+        await fetch(`${API_URL}/products/${id}`, {
+            method: "DELETE",
+        });
+    },
+
+    getMaterials: async (): Promise<RawMaterial[]> => {
+        const response = await fetch(`${API_URL}/raw-materials`);
+        return response.json();
+    },
+
+    createMaterial: async (data: {
+        name: string;
+        stockQuantity: number;
+    }): Promise<RawMaterial> => {
+        const response = await fetch(`${API_URL}/raw-materials`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+        });
+        return response.json();
+    },
+
+    deleteMaterial: async (id: number): Promise<void> => {
+        await fetch(`${API_URL}/raw-materials/${id}`, {
+            method: "DELETE",
+        });
     },
 };
