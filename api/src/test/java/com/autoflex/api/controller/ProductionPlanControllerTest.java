@@ -29,7 +29,7 @@ public class ProductionPlanControllerTest {
     @Test
     void shouldReturnProductionPlanSuccessfully() throws Exception {
         ProductionPlanDTO mockPlan = new ProductionPlanDTO();
-        mockPlan.AddItem(new ProductionItemDTO("Test Product", 10, new BigDecimal("100.00")));
+        mockPlan.addItem(new ProductionItemDTO("Test Product", 10, new BigDecimal("100.00")));
 
         when(service.calculateProductionPlan()).thenReturn(mockPlan);
 
