@@ -1,10 +1,8 @@
 package com.autoflex.api.controller;
 
 import com.autoflex.api.model.Product;
-import com.autoflex.api.repository.ProductRepository;
 import com.autoflex.api.service.ProductService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.ServletRequestDataBinder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
