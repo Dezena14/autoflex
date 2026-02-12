@@ -20,8 +20,8 @@ export const fetchProducts = createAsyncThunk(
     },
 );
 
-export const addProduct = createAsyncThunk(
-    "products/addProduct",
+export const createProduct = createAsyncThunk(
+    "products/createProduct",
     async (newProduct: CreateProductDTO) => {
         const response = await api.createProduct(newProduct);
         return response;
@@ -53,7 +53,7 @@ const productsSlice = createSlice({
                 state.status = "failed";
             })
             .addCase(
-                addProduct.fulfilled,
+                createProduct.fulfilled,
                 (state, action: PayloadAction<Product>) => {
                     state.items.push(action.payload);
                 },

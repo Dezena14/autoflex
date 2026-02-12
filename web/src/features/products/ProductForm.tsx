@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { Save, Plus, Trash2, ArrowLeft } from "lucide-react";
 import { Button } from "../../components/Button";
-import { addProduct } from "./productsSlice";
+import { createProduct } from "./productsSlice";
 import { fetchMaterials } from "../inventory/materialsSlice";
 import { type RootState, type AppDispatch } from "../../store/store";
 
@@ -70,7 +70,7 @@ export const ProductForm = () => {
             })),
         };
 
-        await dispatch(addProduct(payload));
+        await dispatch(createProduct(payload));
         navigate("/products");
     };
 
@@ -96,10 +96,11 @@ export const ProductForm = () => {
             >
                 <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-text-main">
+                        <label htmlFor="productName" className="text-sm font-medium text-text-main">
                             Product Name
                         </label>
                         <input
+                            id="productName"
                             required
                             type="text"
                             className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
@@ -113,6 +114,7 @@ export const ProductForm = () => {
                             Selling Price ($)
                         </label>
                         <input
+                            id="productPrice"
                             required
                             type="number"
                             step="0.01"
